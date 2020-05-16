@@ -1,9 +1,44 @@
 const express = require('express');
-const { uuid } = require('uuidv4');
+const { uuid, isUuid } = require('uuidv4');
 
 const app = express();
 
 app.use(express.json());
+
+function logRequest(request, response, next) {
+  const { method, url } = request;
+
+  const logLabel = `[${method.toUpperCase()}] - ${url}`;
+
+  console.time(logLabel);
+
+  next();
+
+  console.timeEnd(logLabel);
+}
+
+function validateId(request, response, next) {
+  const { id } = request.params;
+
+  if (!isUuid(id)) {
+    return response.status(400).json({ error: 'ID invalid.'});
+  }
+
+  return next();
+}
+
+function validateFields(request, response, next) {
+  const { name, email } = request.body;
+
+  if (!name || !email) {
+    return response.status(400).json({error: 'Fields requerid'});
+  }
+
+  return next();
+}
+
+app.use(logRequest);
+app.use('/register/:id', validateId);
 
 const registers = [];
 
@@ -17,7 +52,7 @@ app.get('/register', (request, response) => {
   return response.json(result);
 });
 
-app.post('/register', (request, response) => {
+app.post('/register', validateFields, (request, response) => {
   const { name, email } = request.body;
 
   const register = { id:uuid(), name, email };
@@ -26,7 +61,7 @@ app.post('/register', (request, response) => {
   return response.json(register);
 });
 
-app.put('/register/:id', (request, response) => {
+app.put('/register/:id', validateFields, (request, response) => {
   const { id } = request.params;
   const { name, email } = request.body;
 
