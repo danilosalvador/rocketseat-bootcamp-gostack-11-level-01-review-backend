@@ -8,7 +8,13 @@ app.use(express.json());
 const registers = [];
 
 app.get('/register', (request, response) => {
-  return response.json(registers);
+  const { name } = request.query;
+
+  const result = name
+    ? registers.filter(r => r.name.includes(name))
+    : registers;
+
+  return response.json(result);
 });
 
 app.post('/register', (request, response) => {
